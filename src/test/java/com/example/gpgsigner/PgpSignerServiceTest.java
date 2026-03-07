@@ -1,5 +1,7 @@
 package com.example.gpgsigner;
 
+import org.bouncycastle.bcpg.HashAlgorithmTags;
+import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
@@ -25,10 +27,14 @@ public class PgpSignerServiceTest {
 
         Files.writeString(payload.toPath(), "Hello World");
 
-        PgpSignerService.exportPublicKey(pubKey, privKey, "Test User <test@example.com>", outPub);
+        KmsContentSigner signer = new KmsContentSigner(pubKey, privKey, PublicKeyAlgorithmTags.RSA_GENERAL,
+                HashAlgorithmTags.SHA256);
+        PgpSignerService service = new PgpSignerService(signer);
+
+        service.exportPublicKey("Test User <test@example.com>", outPub);
         assertTrue(outPub.length() > 0);
 
-        PgpSignerService.signPayload(privKey, payload, outSig);
+        service.signPayload(payload, outSig);
         assertTrue(outSig.length() > 0);
 
         outPub.deleteOnExit();

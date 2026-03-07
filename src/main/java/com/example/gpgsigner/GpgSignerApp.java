@@ -1,5 +1,7 @@
 package com.example.gpgsigner;
 
+import org.bouncycastle.bcpg.HashAlgorithmTags;
+import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
@@ -41,7 +43,10 @@ public class GpgSignerApp implements Callable<Integer> {
         @Override
         public Integer call() {
             try {
-                PgpSignerService.exportPublicKey(pubKey, privKey, identity, out);
+                KmsContentSigner signer = new KmsContentSigner(pubKey, privKey, PublicKeyAlgorithmTags.RSA_GENERAL,
+                        HashAlgorithmTags.SHA256);
+                PgpSignerService service = new PgpSignerService(signer);
+                service.exportPublicKey(identity, out);
                 System.out.println("Successfully exported PGP public key to: " + out.getAbsolutePath());
                 return 0;
             } catch (Exception e) {
@@ -53,6 +58,9 @@ public class GpgSignerApp implements Callable<Integer> {
 
     @Command(name = "sign", description = "Generates a detached PGP signature for a payload")
     static class SignCommand implements Callable<Integer> {
+        @Option(names = "--pub-key", required = true, description = "Path to the RSA public key PEM file")
+        File pubKey;
+
         @Option(names = "--priv-key", required = true, description = "Path to the RSA private key PEM file")
         File privKey;
 
@@ -65,7 +73,10 @@ public class GpgSignerApp implements Callable<Integer> {
         @Override
         public Integer call() {
             try {
-                PgpSignerService.signPayload(privKey, payload, out);
+                KmsContentSigner signer = new KmsContentSigner(pubKey, privKey, PublicKeyAlgorithmTags.RSA_GENERAL,
+                        HashAlgorithmTags.SHA256);
+                PgpSignerService service = new PgpSignerService(signer);
+                service.signPayload(payload, out);
                 System.out.println("Successfully generated PGP signature to: " + out.getAbsolutePath());
                 return 0;
             } catch (Exception e) {

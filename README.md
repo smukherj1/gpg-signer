@@ -6,15 +6,18 @@ A Java binary that can generate PGP signatures and export PGP public keys using 
 
 The core of the key generation and signing process is implemented using the **Bouncy Castle (BC)** library, specifically the `bcprov`, `bcpg`, and `bcpkix` packages. 
 
-### PGPContentSigner Abstraction
-Bouncy Castle's OpenPGP API interacts with private keys through the `PGPContentSigner` interface. To abstract away the location of the private key (i.e., whether it's local or residing in Cloud KMS), the project implements a custom `KmsContentSigner`. 
+### Key Storage Abstraction
+To abstract away the location of the private key, the project utilizes the `KmsContentSigner` class, which implements the Bouncy Castle `PGPContentSignerBuilder` interface. 
 
-When generating a signature, Bouncy Castle writes the data-to-be-signed to the `OutputStream` provided by `KmsContentSigner`. Once all data is digested, it calls `getSignature()`. Currently, this method fulfills the signature using a local Java `java.security.PrivateKey`. To integrate with Cloud KMS later, one simply needs to replace this local signing call with the appropriate Cloud KMS API SDK call.
+`KmsContentSigner` is responsible for:
+1. Loading the raw RSA public and private keys from PEM files.
+2. Providing access to the `RSAPublicKey` while keeping the `RSAPrivateKey` encapsulated.
+3. Building a `PGPContentSigner` that performs the actual signing operations.
+
+By injecting `KmsContentSigner` into services like `PgpSignerService`, the system remains decoupled from the specific key storage mechanism. To integrate with Cloud KMS later, one simply needs to update `KmsContentSigner` to delegate signing calls to the Cloud KMS SDK instead of using the local private key.
 
 ### Deterministic Key Creation
-In OpenPGP, a Signature packet identifies the signing key using an Issuer Key ID. This ID is derived from the properties of the Public Key at the moment of its creation (including the creation timestamp). 
-
-To ensure that the signature's Issuer Key ID matches the exported public key perfectly, `PgpSignerService` utilizes a hardcoded, deterministic key creation date (January 1, 2024) across both the public key export command and the signature generation command.
+In OpenPGP, a Signature packet identifies the signing key using an Issuer Key ID, which is derived from the public key's properties and creation timestamp. To ensure consistency between exported public keys and generated signatures, `PgpSignerService` uses a deterministic key creation date (January 1, 2026).
 
 ## How to Build
 
@@ -55,6 +58,7 @@ The project uses JUnit 5 to programmatically verify public key exports and signa
 3. **Sign a payload**
    ```bash
    ./build/install/gpg-signer/bin/gpg-signer sign \
+     --pub-key data/test_public_key.pem \
      --priv-key data/test_private_key.pem \
      --payload README.md \
      --out my_signature.asc
