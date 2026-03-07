@@ -1,0 +1,7 @@
+
+Another test file for clear signing that has some lines that begin with
+- because those are special.
+- is another special line.
+
+Now done.
+-
