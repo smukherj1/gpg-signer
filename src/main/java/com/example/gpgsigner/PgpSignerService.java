@@ -14,16 +14,20 @@ import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 
 import java.io.*;
-import java.security.Security;
-import java.security.interfaces.RSAPrivateKey;
-import java.security.interfaces.RSAPrivateCrtKey;
-import java.security.interfaces.RSAPublicKey;
 import java.math.BigInteger;
+import java.security.Security;
+import java.security.interfaces.RSAPrivateCrtKey;
+import java.security.interfaces.RSAPrivateKey;
+import java.security.interfaces.RSAPublicKey;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.Date;
 
 public class PgpSignerService {
 
     private static final String VERSION = "GPG Signer 1.0";
+    private static final Date PUBLIC_KEY_CREATION_DATE = Date.from(LocalDate.of(2026, 1, 1)
+            .atStartOfDay(ZoneId.systemDefault()).toInstant());
 
     static {
         Security.addProvider(new BouncyCastleProvider());
@@ -35,9 +39,8 @@ public class PgpSignerService {
         RSAPrivateKey rsaPriv = readPrivateKey(rsaPrivFile);
 
         JcaPGPKeyConverter pgpConverter = new JcaPGPKeyConverter().setProvider("BC");
-        Date fixedCreationDate = new Date(1704067200000L); // Jan 1 2024
         PGPPublicKey pgpPub = pgpConverter.getPGPPublicKey(PublicKeyAlgorithmTags.RSA_GENERAL, rsaPub,
-                fixedCreationDate);
+                PUBLIC_KEY_CREATION_DATE);
 
         PGPPrivateKey dummyPgpPriv = new PGPPrivateKey(pgpPub.getKeyID(), pgpPub.getPublicKeyPacket(), null);
 
@@ -68,9 +71,8 @@ public class PgpSignerService {
         RSAPublicKey rsaPub = (RSAPublicKey) java.security.KeyFactory.getInstance("RSA").generatePublic(pubSpec);
 
         JcaPGPKeyConverter pgpConverter = new JcaPGPKeyConverter().setProvider("BC");
-        Date fixedCreationDate = new Date(1704067200000L); // Jan 1 2024
         PGPPublicKey pgpPub = pgpConverter.getPGPPublicKey(PublicKeyAlgorithmTags.RSA_GENERAL, rsaPub,
-                fixedCreationDate);
+                PUBLIC_KEY_CREATION_DATE);
 
         PGPPrivateKey dummyPgpPriv = new PGPPrivateKey(pgpPub.getKeyID(), pgpPub.getPublicKeyPacket(), null);
 
