@@ -1,0 +1,17 @@
+Origin: Example
+Label: Example
+Suite: stable
+Codename: stable
+Components: main
+Architectures: amd64 arm64
+Description: Example Debian Repository
+Date: Sat, 07 Mar 2026 12:00:00 +0000
+MD5Sum:
+ d41d8cd98f00b204e9800998ecf8427e                0 main/binary-amd64/Packages
+ d41d8cd98f00b204e9800998ecf8427e                0 main/binary-arm64/Packages
+SHA1:
+ da39a3ee5e6b4b0d3255bfef95601890afd80709        0 main/binary-amd64/Packages
+ da39a3ee5e6b4b0d3255bfef95601890afd80709        0 main/binary-arm64/Packages
+SHA256:
+ e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855        0 main/binary-amd64/Packages
+ e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855        0 main/binary-arm64/Packages

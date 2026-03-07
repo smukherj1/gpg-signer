@@ -1,16 +1,18 @@
 package com.example.gpgsigner;
 
-import org.bouncycastle.bcpg.ArmoredOutputStream;
-import org.bouncycastle.bcpg.BCPGOutputStream;
-import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
-import org.bouncycastle.openpgp.*;
-import org.bouncycastle.openpgp.operator.jcajce.JcaPGPKeyConverter;
-
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.security.interfaces.RSAPublicKey;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.Date;
+
+import org.bouncycastle.bcpg.ArmoredOutputStream;
+import org.bouncycastle.bcpg.BCPGOutputStream;
+import org.bouncycastle.bcpg.HashAlgorithmTags;
+import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
+import org.bouncycastle.openpgp.*;
+import org.bouncycastle.openpgp.operator.jcajce.JcaPGPKeyConverter;
 
 public class PgpSignerService {
 
@@ -72,6 +74,64 @@ public class PgpSignerService {
                 sGen.update(buf, 0, len);
             }
 
+            sGen.generate().encode(bOut);
+        }
+    }
+
+    public void clearSignPayload(File payloadFile, File outputFile) throws Exception {
+        RSAPublicKey rsaPub = signer.getPublicKey();
+
+        JcaPGPKeyConverter pgpConverter = new JcaPGPKeyConverter().setProvider("BC");
+        PGPPublicKey pgpPub = pgpConverter.getPGPPublicKey(PublicKeyAlgorithmTags.RSA_GENERAL, rsaPub,
+                PUBLIC_KEY_CREATION_DATE);
+
+        PGPPrivateKey dummyPgpPriv = new PGPPrivateKey(pgpPub.getKeyID(), pgpPub.getPublicKeyPacket(), null);
+
+        PGPSignatureGenerator sGen = new PGPSignatureGenerator(signer);
+        sGen.init(PGPSignature.CANONICAL_TEXT_DOCUMENT, dummyPgpPriv);
+
+        ArmoredOutputStream.Builder outputBuilder = ArmoredOutputStream.builder()
+                .setVersion(VERSION);
+
+        try (BufferedReader reader = new BufferedReader(new FileReader(payloadFile));
+                ArmoredOutputStream aos = outputBuilder.build(new FileOutputStream(outputFile))) {
+
+            aos.beginClearText(HashAlgorithmTags.SHA256);
+
+            String line;
+            while ((line = reader.readLine()) != null) {
+                // Strip trailing whitespace for both hash and output to be consistent
+                int length = line.length();
+                while (length > 0 && Character.isWhitespace(line.charAt(length - 1))) {
+                    length--;
+                }
+                String strippedLine = line.substring(0, length);
+                byte[] lineBytes = strippedLine.getBytes(StandardCharsets.UTF_8);
+
+                // Hash the stripped line + canonical line ending
+                if (lineBytes.length > 0) {
+                    sGen.update(lineBytes, 0, lineBytes.length);
+                }
+                sGen.update((byte) '\r');
+                sGen.update((byte) '\n');
+
+                // Output the dash-escaped text
+                if (strippedLine.startsWith("-")) {
+                    aos.write('-');
+                    aos.write(' ');
+                }
+                aos.write(lineBytes);
+                aos.write('\r');
+                aos.write('\n');
+            }
+
+            // Finish the cleartext section
+            aos.write('\r');
+            aos.write('\n');
+            aos.endClearText();
+
+            // Append the signature
+            BCPGOutputStream bOut = new BCPGOutputStream(aos);
             sGen.generate().encode(bOut);
         }
     }

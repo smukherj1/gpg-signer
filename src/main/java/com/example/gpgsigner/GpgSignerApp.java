@@ -11,7 +11,8 @@ import java.util.concurrent.Callable;
 
 @Command(name = "gpg-signer", mixinStandardHelpOptions = true, version = "1.0", description = "A CLI tool to generate PGP keys and signatures utilizing raw RSA keys or Cloud KMS.", subcommands = {
         GpgSignerApp.ExportPublicKeyCommand.class,
-        GpgSignerApp.SignCommand.class
+        GpgSignerApp.SignCommand.class,
+        GpgSignerApp.ClearsignCommand.class
 })
 public class GpgSignerApp implements Callable<Integer> {
 
@@ -78,6 +79,36 @@ public class GpgSignerApp implements Callable<Integer> {
                 PgpSignerService service = new PgpSignerService(signer);
                 service.signPayload(payload, out);
                 System.out.println("Successfully generated PGP signature to: " + out.getAbsolutePath());
+                return 0;
+            } catch (Exception e) {
+                e.printStackTrace();
+                return 1;
+            }
+        }
+    }
+
+    @Command(name = "clearsign", description = "Generates a cleartext PGP signature (InRelease style)")
+    static class ClearsignCommand implements Callable<Integer> {
+        @Option(names = "--pub-key", required = true, description = "Path to the RSA public key PEM file")
+        File pubKey;
+
+        @Option(names = "--priv-key", required = true, description = "Path to the RSA private key PEM file")
+        File privKey;
+
+        @Option(names = "--payload", required = true, description = "Path to the file to sign")
+        File payload;
+
+        @Option(names = "--out", required = true, description = "Path to the output cleartext signature file (.asc)")
+        File out;
+
+        @Override
+        public Integer call() {
+            try {
+                KmsContentSigner signer = new KmsContentSigner(pubKey, privKey, PublicKeyAlgorithmTags.RSA_GENERAL,
+                        HashAlgorithmTags.SHA256);
+                PgpSignerService service = new PgpSignerService(signer);
+                service.clearSignPayload(payload, out);
+                System.out.println("Successfully generated cleartext PGP signature to: " + out.getAbsolutePath());
                 return 0;
             } catch (Exception e) {
                 e.printStackTrace();

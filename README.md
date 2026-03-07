@@ -41,30 +41,4 @@ The project uses JUnit 5 to programmatically verify public key exports and signa
 
 ### Manual Verification using GnuPG
 
-1. **Export the raw RSA key as a PGP Public Key**
-   ```bash
-   ./build/install/gpg-signer/bin/gpg-signer export-public-key \
-     --pub-key data/test_public_key.pem \
-     --priv-key data/test_private_key.pem \
-     --identity "Test User <test@example.com>" \
-     --out my_public_key.asc
-   ```
-
-2. **Import the key to your GnuPG keyring**
-   ```bash
-   gpg --import my_public_key.asc
-   ```
-
-3. **Sign a payload**
-   ```bash
-   ./build/install/gpg-signer/bin/gpg-signer sign \
-     --pub-key data/test_public_key.pem \
-     --priv-key data/test_private_key.pem \
-     --payload README.md \
-     --out my_signature.asc
-   ```
-
-4. **Verify the signature against the payload**
-   ```bash
-   gpg --verify my_signature.asc README.md
-   ```
+Run `test.sh`
