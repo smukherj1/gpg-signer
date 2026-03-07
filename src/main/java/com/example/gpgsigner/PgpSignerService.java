@@ -12,8 +12,6 @@ import org.bouncycastle.openssl.PEMKeyPair;
 import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
-import org.bouncycastle.bcpg.PublicKeyPacket;
-import org.bouncycastle.bcpg.RSAPublicBCPGKey;
 
 import java.io.*;
 import java.security.Security;
@@ -24,6 +22,8 @@ import java.math.BigInteger;
 import java.util.Date;
 
 public class PgpSignerService {
+
+    private static final String VERSION = "GPG Signer 1.0";
 
     static {
         Security.addProvider(new BouncyCastleProvider());
@@ -49,8 +49,9 @@ public class PgpSignerService {
         PGPPublicKey signedKey = PGPPublicKey.addCertification(pgpPub, identity,
                 sGen.generateCertification(identity, pgpPub));
 
-        try (ArmoredOutputStream aos = new ArmoredOutputStream(new FileOutputStream(outputFile))) {
-            aos.setHeader("Version", "GPG Signer 1.0");
+        ArmoredOutputStream.Builder outputBuilder = ArmoredOutputStream.builder().setVersion(VERSION);
+
+        try (ArmoredOutputStream aos = outputBuilder.build(new FileOutputStream(outputFile))) {
             signedKey.encode(aos);
         }
     }
@@ -78,9 +79,10 @@ public class PgpSignerService {
         PGPSignatureGenerator sGen = new PGPSignatureGenerator(signerBuilder);
         sGen.init(PGPSignature.BINARY_DOCUMENT, dummyPgpPriv);
 
+        ArmoredOutputStream.Builder outputBuilder = ArmoredOutputStream.builder().setVersion(VERSION);
+
         try (InputStream in = new FileInputStream(payloadFile);
-                ArmoredOutputStream aos = new ArmoredOutputStream(new FileOutputStream(outputFile))) {
-            aos.setHeader("Version", "GPG Signer 1.0");
+                ArmoredOutputStream aos = outputBuilder.build(new FileOutputStream(outputFile))) {
 
             BCPGOutputStream bOut = new BCPGOutputStream(aos);
 
