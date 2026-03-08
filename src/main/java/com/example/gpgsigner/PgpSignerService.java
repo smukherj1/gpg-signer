@@ -108,18 +108,12 @@ public class PgpSignerService {
                 String strippedLine = line.substring(0, length);
                 byte[] lineBytes = strippedLine.getBytes(StandardCharsets.UTF_8);
 
-                // Hash the stripped line + canonical line ending
                 if (lineBytes.length > 0) {
                     sGen.update(lineBytes, 0, lineBytes.length);
                 }
                 sGen.update((byte) '\r');
                 sGen.update((byte) '\n');
 
-                // Output the dash-escaped text
-                if (strippedLine.startsWith("-")) {
-                    aos.write('-');
-                    aos.write(' ');
-                }
                 aos.write(lineBytes);
                 aos.write('\r');
                 aos.write('\n');
